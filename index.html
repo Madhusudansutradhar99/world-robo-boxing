@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101522">
+  <title>Ultimate Robo Boxing</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, sans-serif;
+      background: #101522;
+      color: #f5f7ff;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 32px 18px;
+      background: radial-gradient(ellipse at 50% 0, #263654 0, #101522 58%);
+    }
+
+    main { width: min(940px, 100%); margin: 0 auto; }
+    header { text-align: center; margin-bottom: 30px; }
+    .eyebrow { color: #56e0c3; font-size: .8rem; font-weight: 800; letter-spacing: .2em; }
+    h1 { margin: 6px 0; font-size: clamp(2rem, 6vw, 3.5rem); line-height: 1; }
+    header p { color: #aeb8cc; }
+
+    .panel {
+      border: 1px solid #39465f;
+      border-radius: 18px;
+      background: #171f30eF;
+      box-shadow: 0 20px 70px #0005;
+      padding: clamp(18px, 4vw, 32px);
+    }
+
+    h2 { margin: 0 0 8px; }
+    .hint { margin: 0 0 22px; color: #aeb8cc; }
+    .roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+    .robot-card {
+      display: flex;
+      min-height: 190px;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 18px;
+      border: 2px solid #39465f;
+      border-radius: 14px;
+      background: #202b40;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+
+    .robot-card:hover, .robot-card:focus-visible { transform: translateY(-3px); border-color: #56e0c3; outline: none; }
+    .robot-card.selected { border-color: #56e0c3; background: #1d3940; box-shadow: 0 0 0 2px #56e0c333; }
+    .robot-icon { font-size: 3rem; line-height: 1; margin-bottom: 14px; }
+    .robot-name { font-size: 1.15rem; font-weight: 800; }
+    .robot-style { color: #b7c1d5; font-size: .9rem; margin-top: 3px; }
+    .stat { width: 100%; margin-top: 13px; color: #56e0c3; font-size: .8rem; font-weight: 700; }
+
+    button.action {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 19px;
+      background: #56e0c3;
+      color: #102127;
+      font: inherit;
+      font-weight: 850;
+      cursor: pointer;
+    }
+    button.action:hover:not(:disabled) { background: #82f2dc; }
+    button.action:disabled { opacity: .42; cursor: not-allowed; }
+    .start-row { display: flex; justify-content: center; margin-top: 22px; }
+
+    .arena { padding: clamp(16px, 4vw, 28px); }
+    .fight-top { display: flex; justify-content: space-between; gap: 18px; align-items: center; color: #b7c1d5; font-weight: 750; }
+    .health-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 18px; align-items: center; margin-top: 12px; }
+    .health-block:last-child { text-align: right; }
+    .health-label { margin-bottom: 6px; font-size: .9rem; font-weight: 800; }
+    .health-track { height: 14px; overflow: hidden; border-radius: 20px; background: #39465f; }
+    .health-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #39d6ac, #a5f06a); transition: width .3s ease; }
+    .health-block:last-child .health-fill { margin-left: auto; background: linear-gradient(90deg, #ffca66, #ff667e); }
+    .vs { font-weight: 900; color: #7f8ba3; }
+    .ring {
+      position: relative;
+      display: flex;
+      min-height: 230px;
+      align-items: center;
+      justify-content: space-around;
+      margin: 22px 0;
+      overflow: hidden;
+      border: 1px solid #53617b;
+      border-radius: 14px;
+      background: linear-gradient(#27334a 0 70%, #39445b 70% 73%, #27334a 73%);
+    }
+    .ring::before, .ring::after {
+      position: absolute;
+      top: 24%;
+      bottom: 24%;
+      width: 2px;
+      content: "";
+      background: #71809b;
+      opacity: .45;
+    }
+    .ring::before { left: 10%; }
+    .ring::after { right: 10%; }
+    .fighter { z-index: 1; font-size: clamp(4rem, 13vw, 7rem); filter: drop-shadow(0 10px 5px #0005); }
+    .fighter.player { transform: scaleX(-1); }
+    .fighter.hit { animation: hit .22s ease-in-out; }
+    @keyframes hit { 50% { transform: translateX(14px) rotate(12deg) scale(1.12); } }
+    .fighter.player.hit { animation-name: player-hit; }
+    @keyframes player-hit { 50% { transform: scaleX(-1) translateX(14px) rotate(12deg) scale(1.12); } }
+    .status { min-height: 1.5em; margin: 0 0 16px; text-align: center; font-weight: 750; color: #d7e1f4; }
+    .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .controls .action.secondary { color: #f5f7ff; background: #39465f; }
+    .controls .action.secondary:hover:not(:disabled) { background: #4a5a77; }
+    .keys { margin: 14px 0 0; text-align: center; color: #8996ad; font-size: .8rem; }
+    .hidden { display: none; }
+    @media (max-width: 520px) {
+      body { padding: 24px 12px; }
+      .health-row { gap: 9px; }
+      .ring { min-height: 190px; }
+      .fight-top { font-size: .85rem; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="eyebrow">CHOOSE YOUR FIGHTER</div>
+      <h1>ULTIMATE ROBO BOXING</h1>
+      <p>Pick a champion. Step into the ring. Claim the belt.</p>
+    </header>
+
+    <section id="selection" class="panel" aria-labelledby="choose-heading">
+      <h2 id="choose-heading">Choose your robot</h2>
+      <p class="hint">Each fighter has a different style. Choose the one that suits you.</p>
+      <div id="roster" class="roster"></div>
+      <div class="start-row"><button id="start" class="action" disabled>Choose a fighter</button></div>
+    </section>
+
+    <section id="fight" class="panel arena hidden" aria-label="Fight arena">
+      <div class="fight-top"><span>CHAMPIONSHIP BOUT</span><span id="round">ROUND 1</span></div>
+      <div class="health-row">
+        <div class="health-block">
+          <div id="player-label" class="health-label"></div>
+          <div class="health-track" role="progressbar" aria-label="Your health" aria-valuemin="0" aria-valuemax="100"><div id="player-health" class="health-fill"></div></div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="health-block">
+          <div id="opponent-label" class="health-label"></div>
+          <div class="health-track" role="progressbar" aria-label="Opponent health" aria-valuemin="0" aria-valuemax="100"><div id="opponent-health" class="health-fill"></div></div>
+        </div>
+      </div>
+      <div class="ring" aria-hidden="true">
+        <div id="player-icon" class="fighter player"></div>
+        <div id="opponent-icon" class="fighter"></div>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <div class="controls">
+        <button id="jab" class="action">Jab · J</button>
+        <button id="heavy" class="action">Power punch · K</button>
+        <button id="block" class="action secondary">Block · Space</button>
+      </div>
+      <p class="keys">Land hits to knock out your opponent. Block to reduce incoming damage.</p>
+      <div class="start-row"><button id="rematch" class="action hidden">Choose another fighter</button></div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const robots = [
+        { name: "Ironclad", icon: "🤖", style: "The tank · tough and steady", power: 1, rating: 3, health: 120 },
+        { name: "Volt", icon: "⚡", style: "The striker · quick and fierce", power: 1.2, rating: 5, health: 90 },
+        { name: "Nova", icon: "🥊", style: "The all-rounder · balanced", power: 1.1, rating: 4, health: 105 }
+      ];
+      const selection = document.querySelector("#selection");
+      const fight = document.querySelector("#fight");
+      const roster = document.querySelector("#roster");
+      const start = document.querySelector("#start");
+      const status = document.querySelector("#status");
+      const playerBar = document.querySelector("#player-health");
+      const opponentBar = document.querySelector("#opponent-health");
+      let chosen = null;
+      let player = null;
+      let opponent = null;
+      let guarding = false;
+      let finished = false;
+      let aiTimer;
+      let guardTimer;
+
+      function renderRoster() {
+        roster.replaceChildren();
+        robots.forEach((robot, index) => {
+          const card = document.createElement("button");
+          card.type = "button";
+          card.className = "robot-card";
+          card.setAttribute("aria-pressed", "false");
+          card.innerHTML = `<span class="robot-icon" aria-hidden="true">${robot.icon}</span><span class="robot-name">${robot.name}</span><span class="robot-style">${robot.style}</span><span class="stat">POWER ${"★".repeat(robot.rating)} · HP ${robot.health}</span>`;
+          card.addEventListener("click", () => {
+            chosen = index;
+            roster.querySelectorAll(".robot-card").forEach((item, itemIndex) => {
+              const selected = itemIndex === chosen;
+              item.classList.toggle("selected", selected);
+              item.setAttribute("aria-pressed", String(selected));
+            });
+            start.disabled = false;
+            start.textContent = `Fight as ${robot.name}`;
+          });
+          roster.append(card);
+        });
+      }
+
+      function updateHealth() {
+        const playerPercent = Math.max(0, player.hp / player.maxHp * 100);
+        const opponentPercent = Math.max(0, opponent.hp / opponent.maxHp * 100);
+        playerBar.style.width = `${playerPercent}%`;
+        opponentBar.style.width = `${opponentPercent}%`;
+        playerBar.parentElement.setAttribute("aria-valuenow", String(Math.round(playerPercent)));
+        opponentBar.parentElement.setAttribute("aria-valuenow", String(Math.round(opponentPercent)));
+      }
+
+      function finish(won) {
+        if (finished) return;
+        finished = true;
+        clearInterval(aiTimer);
+        clearTimeout(guardTimer);
+        guarding = false;
+        document.querySelectorAll(".controls button").forEach(button => button.disabled = true);
+        status.textContent = won ? `${player.name} wins! The championship is yours!` : `${opponent.name} wins this round. Choose a fighter and try again!`;
+        document.querySelector("#rematch").classList.remove("hidden");
+      }
+
+      function hit(target, amount, iconId) {
+        target.hp = Math.max(0, target.hp - amount);
+        updateHealth();
+        const icon = document.querySelector(iconId);
+        icon.classList.remove("hit");
+        void icon.offsetWidth;
+        icon.classList.add("hit");
+        if (target.hp === 0) finish(target === opponent);
+      }
+
+      function playerAttack(kind) {
+        if (finished) return;
+        const heavy = kind === "heavy";
+        const damage = Math.round((heavy ? 19 : 10) * player.power);
+        status.textContent = `${player.name} lands a ${heavy ? "power punch" : "jab"} for ${damage} damage!`;
+        hit(opponent, damage, "#opponent-icon");
+      }
+
+      function opponentTurn() {
+        if (finished) return;
+        const heavy = Math.random() < .28;
+        const damage = Math.round((heavy ? 16 : 9) * opponent.power * (guarding ? .3 : 1));
+        if (guarding) {
+          status.textContent = `${opponent.name} attacks, but your block absorbs most of the ${damage} damage!`;
+        } else {
+          status.textContent = `${opponent.name} hits you with a ${heavy ? "power punch" : "jab"} for ${damage} damage!`;
+        }
+        hit(player, damage, "#player-icon");
+      }
+
+      function beginFight() {
+        if (chosen === null) return;
+        clearInterval(aiTimer);
+        player = { ...robots[chosen], hp: robots[chosen].health, maxHp: robots[chosen].health };
+        const rivals = robots.filter((_, index) => index !== chosen);
+        const rival = rivals[Math.floor(Math.random() * rivals.length)];
+        opponent = { ...rival, hp: rival.health, maxHp: rival.health };
+        guarding = false;
+        finished = false;
+        selection.classList.add("hidden");
+        fight.classList.remove("hidden");
+        document.querySelector("#player-label").textContent = player.name;
+        document.querySelector("#opponent-label").textContent = opponent.name;
+        document.querySelector("#player-icon").textContent = player.icon;
+        document.querySelector("#opponent-icon").textContent = opponent.icon;
+        document.querySelector("#status").textContent = `${player.name} vs ${opponent.name} — fight!`;
+        document.querySelectorAll(".controls button").forEach(button => button.disabled = false);
+        document.querySelector("#rematch").classList.add("hidden");
+        updateHealth();
+        aiTimer = setInterval(opponentTurn, 1100);
+      }
+
+      document.querySelector("#jab").addEventListener("click", () => playerAttack("jab"));
+      document.querySelector("#heavy").addEventListener("click", () => playerAttack("heavy"));
+      document.querySelector("#block").addEventListener("click", () => {
+        if (finished) return;
+        guarding = true;
+        status.textContent = `${player.name} raises their guard!`;
+        clearTimeout(guardTimer);
+        guardTimer = setTimeout(() => { guarding = false; }, 1250);
+      });
+      start.addEventListener("click", beginFight);
+      document.querySelector("#rematch").addEventListener("click", () => {
+        clearInterval(aiTimer);
+        fight.classList.add("hidden");
+        selection.classList.remove("hidden");
+        document.querySelector("#rematch").classList.add("hidden");
+        chosen = null;
+        roster.querySelectorAll(".robot-card").forEach(card => {
+          card.classList.remove("selected");
+          card.setAttribute("aria-pressed", "false");
+        });
+        start.disabled = true;
+        start.textContent = "Choose a fighter";
+        document.querySelectorAll(".controls button").forEach(button => button.disabled = false);
+      });
+      document.addEventListener("keydown", event => {
+        if (fight.classList.contains("hidden") || event.repeat) return;
+        if (event.key.toLowerCase() === "j") playerAttack("jab");
+        if (event.key.toLowerCase() === "k") playerAttack("heavy");
+        if (event.code === "Space") {
+          event.preventDefault();
+          document.querySelector("#block").click();
+        }
+      });
+      renderRoster();
+    })();
+  </script>
+</body>
+</html>
